@@ -111,6 +111,4 @@ pytest
 3. Tạo commit với mô tả rõ ràng.
 4. Mở pull request để xem xét.
 
-## Giấy phép
-
-Chưa xác định.
+## Designed by Mansooho Ng  and Samuel Ng

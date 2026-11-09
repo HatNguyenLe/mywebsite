@@ -34,6 +34,9 @@ ENV/
 .eggs/
 *.egg
 pip-wheel-metadata/
+*.db
+*.sqlite
+*.sqlite3
 
 # Environment variables and local configuration
 .env
@@ -59,4 +62,3 @@ Desktop.ini
 *.temp
 *.swp
 *~
-

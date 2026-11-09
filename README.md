@@ -1,114 +1,185 @@
-# React & Python Project
+# Hat Nguyen Links
 
-Dự án web gồm giao diện người dùng xây dựng bằng React và phần backend/API xây dựng bằng Python.
+Website portfolio tiếng Việt để giới thiệu và quản lý các liên kết cá nhân. Giao diện công khai lấy dữ liệu từ PostgreSQL; quản trị viên có thể đăng nhập để thêm, sửa, ẩn, sắp xếp hoặc xóa liên kết.
+
+## Tính năng
+
+- Trang portfolio responsive theo phong cách dark-tech, gồm Hero, About, Expertise, Work, Research, Experience, Education và Contact.
+- Nhóm liên kết theo danh mục và sắp xếp theo thứ tự tùy chỉnh.
+- Trang quản trị tại `/admin`.
+- Xác thực quản trị bằng JWT có thời hạn.
+- API kiểm tra và chuẩn hóa dữ liệu đầu vào.
+- Dữ liệu PostgreSQL được lưu trong Docker volume.
+- Khởi động toàn bộ React, FastAPI và PostgreSQL bằng Docker Compose.
 
 ## Công nghệ
 
-- **Frontend:** React
-- **Backend:** Python
-- **Quản lý phiên bản:** Git
+- **Frontend:** React 19, TypeScript, Vite, Nginx
+- **Backend:** Python 3.13, FastAPI, SQLAlchemy
+- **Database:** PostgreSQL 17
+- **Vận hành:** Docker Compose
 
-## Cấu trúc đề xuất
+## Cấu trúc dự án
 
 ```text
 .
-├── frontend/          # Ứng dụng React
-├── backend/           # Ứng dụng Python và API
-├── .gitignore
-└── README.md
+├── backend/
+│   ├── app/                 # FastAPI, model và API
+│   ├── tests/               # Kiểm thử backend
+│   ├── Dockerfile
+│   └── requirements.txt
+├── frontend/
+│   ├── src/                 # Giao diện React
+│   ├── Dockerfile
+│   └── nginx.conf
+├── .env.example
+└── docker-compose.yml
 ```
 
-## Yêu cầu
+## Chạy bằng Docker
 
-Trước khi bắt đầu, hãy cài đặt:
+### 1. Chuẩn bị biến môi trường
 
-- Node.js và npm
-- Python 3
-- Git
+Sao chép file mẫu:
 
-## Cài đặt
+```powershell
+Copy-Item .env.example .env
+```
+
+Trên macOS hoặc Linux:
+
+```bash
+cp .env.example .env
+```
+
+Mở `.env` và thay đổi tối thiểu ba giá trị:
+
+```dotenv
+POSTGRES_PASSWORD=mat-khau-database-manh
+SECRET_KEY=chuoi-ngau-nhien-it-nhat-32-ky-tu
+ADMIN_PASSWORD=mat-khau-quan-tri-manh
+```
+
+Có thể tạo `SECRET_KEY` bằng Python:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+Không commit file `.env` lên Git.
+
+### 2. Khởi động
+
+```bash
+docker compose up --build -d
+```
+
+Mở:
+
+- Website: <http://localhost:8080>
+- Quản trị: <http://localhost:8080/admin>
+- API docs nội bộ container: `http://backend:8000/docs`
+
+Đăng nhập bằng `ADMIN_USERNAME` và `ADMIN_PASSWORD` trong file `.env`.
+
+### 3. Xem trạng thái và log
+
+```bash
+docker compose ps
+docker compose logs -f
+```
+
+### 4. Dừng dịch vụ
+
+```bash
+docker compose down
+```
+
+Lệnh trên không xóa dữ liệu. Chỉ dùng lệnh sau khi thực sự muốn xóa toàn bộ dữ liệu PostgreSQL:
+
+```bash
+docker compose down -v
+```
+
+## Phát triển cục bộ
+
+### Backend
+
+Tạo môi trường ảo và cài dependency:
+
+```powershell
+cd backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements-dev.txt
+```
+
+Backend yêu cầu các biến trong `.env`. Khi phát triển không dùng PostgreSQL, có thể đặt:
+
+```dotenv
+DATABASE_URL=sqlite:///./portfolio.db
+SECRET_KEY=local-development-secret-key-at-least-32-characters
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=local-admin-password
+```
+
+Chạy API:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+API chạy tại <http://localhost:8000>, tài liệu Swagger tại <http://localhost:8000/docs>.
 
 ### Frontend
 
 ```bash
 cd frontend
 npm install
-```
-
-Nếu dự án sử dụng Yarn hoặc pnpm, hãy thay `npm` bằng trình quản lý gói tương ứng.
-
-### Backend
-
-Tạo và kích hoạt môi trường ảo:
-
-```bash
-cd backend
-python -m venv .venv
-```
-
-Trên Windows:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
-
-Trên macOS hoặc Linux:
-
-```bash
-source .venv/bin/activate
-```
-
-Cài đặt các thư viện Python:
-
-```bash
-pip install -r requirements.txt
-```
-
-## Chạy dự án
-
-### Chạy frontend
-
-```bash
-cd frontend
 npm run dev
 ```
 
-Tùy theo công cụ khởi tạo React, lệnh chạy có thể là `npm start`.
+Frontend chạy tại <http://localhost:5173> và tự chuyển tiếp `/api` tới backend ở cổng `8000`.
 
-### Chạy backend
+## API chính
 
-Kích hoạt môi trường ảo, sau đó chạy lệnh phù hợp với framework Python được sử dụng. Ví dụ:
+| Method | Endpoint | Quyền | Chức năng |
+|---|---|---|---|
+| `GET` | `/api/health` | Công khai | Kiểm tra API |
+| `GET` | `/api/links` | Công khai | Danh sách liên kết đang hiển thị |
+| `POST` | `/api/auth/login` | Công khai | Đăng nhập quản trị |
+| `GET` | `/api/admin/links` | Admin | Danh sách đầy đủ |
+| `POST` | `/api/admin/links` | Admin | Thêm liên kết |
+| `PATCH` | `/api/admin/links/{id}` | Admin | Sửa liên kết |
+| `DELETE` | `/api/admin/links/{id}` | Admin | Xóa liên kết |
 
-```bash
-cd backend
-python app.py
-```
+## Kiểm thử và kiểm tra mã
 
-## Biến môi trường
-
-Không commit file `.env` lên Git. Hãy tạo file `.env.example` chứa tên các biến cần thiết nhưng không chứa khóa bí mật, sau đó sao chép thành `.env` khi phát triển cục bộ.
-
-## Kiểm thử
-
-Chạy kiểm thử frontend:
-
-```bash
-cd frontend
-npm test
-```
-
-Chạy kiểm thử backend:
+Backend:
 
 ```bash
 cd backend
 pytest
+ruff check .
 ```
 
-## Đóng góp
+Frontend:
 
-1. Tạo một nhánh mới cho thay đổi.
-2. Thực hiện và kiểm thử thay đổi.
-3. Tạo commit với mô tả rõ ràng.
-4. Mở pull request để xem xét.
+```bash
+cd frontend
+npm run lint
+npm run build
+```
 
-## Designed by Mansooho Ng  and Samuel Ng
+## Triển khai
+
+Docker Compose hiện chỉ công khai cổng frontend. Nginx chuyển tiếp các request `/api` tới backend trong mạng Docker nội bộ; PostgreSQL không mở cổng ra host.
+
+Khi triển khai Internet:
+
+1. Dùng mật khẩu và `SECRET_KEY` riêng, đủ mạnh.
+2. Đặt reverse proxy có HTTPS phía trước cổng ứng dụng.
+3. Cập nhật `FRONTEND_ORIGINS` thành domain thật.
+4. Thiết lập sao lưu định kỳ cho volume PostgreSQL.
+
+## Designed by Mansooho Ng and Samuel Ng
